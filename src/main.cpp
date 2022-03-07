@@ -37,8 +37,6 @@ void setup()
 
 void loop()
 {
-  char mydata[5] = "01t9";
-  postData(mydata);
   char message[128] = "";
   char temp;
   for (int i = 0; i < sizeof(message); i++)
