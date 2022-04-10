@@ -207,12 +207,12 @@ void postData(char data[])
   Serial.println(temperature);
   Serial.println(battery);
 
-  if (sender == 0)
+  if (sender == 33)
   {
     device = "S0006";
     accessToken = "scscscdwrrerer";
   }
-  else if (sender == 1)
+  else if (sender == 34)
   {
     device = "PV0010";
     accessToken = "BrNjFhYr9g7kbTrw43g7";
@@ -231,8 +231,8 @@ void postData(char data[])
 
   String deviceJson = "{\"device\":" + device + "}";
   String telemetryJson = "{\"trigger\":" + String(trigger) +
-                         ",\"temperature\":" + String(temperature) +
-                         ",\"battery_level\":" + String(battery) +
+                         ",\"temprature\":" + String(temperature) +
+                         ",\"battery\":" + String(battery) +
                          "}";
 
   Serial.print("JSON: ");
