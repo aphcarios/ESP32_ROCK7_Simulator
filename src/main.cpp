@@ -15,20 +15,20 @@ void initWiFi();
 void initMQTT(String token);
 void processGateway(char message[]);
 void replyToGateway(void);
-void postData(char data[]);
+int postData(String data);
 
 bool binarySession = false;
-char data[4];
 int dataLength = 0;
 
-String api = "http://159.223.77.171:8080/api/whiskers/Device/test/6e35c4d4-9e1e-4e84-bcae-fe762cc1e0c3";
+String api = "http://192.168.1.129:8080/api/whiskers/Device/7lE8dNiruTufKHhOBHhs";
+String hexData = "";
 
 int startCounter = 0;
 
 void setup()
 {
   Serial.begin(9600);
-  Serial2.begin(19200);
+  Serial2.begin(9600);
 
   initWiFi();
   http.begin(api);
@@ -122,7 +122,7 @@ void processGateway(char msg[])
     {
       Serial.println("Received: " + message);
 
-      postData(data);
+      postData(hexData);
       Serial2.print(F("\r\n+SBDIX= 0, 0, 0, 0, 0, 0\r\n"));
       Serial.println("Reply: +SBDIX= 0, 0, 0, 0, 0, 0\n");
     }
@@ -133,137 +133,40 @@ void processGateway(char msg[])
   else
   {
     binarySession = false;
+
+    char data[] = {0x00, 0x00, 0x00};
+
+    hexData = "";
+
+    Serial.println("Entering For Loop");
+
     for (int i = 0; i < dataLength; i++)
     {
-      data[i] = msg[i];
+      sprintf(data, "%02X", msg[i]);
+      hexData = hexData + String(data);
     }
+
     Serial2.print("\r\n0\r\n");
     Serial2.print("\r\nOK\r\n");
     Serial.print("Data: ");
+    Serial.println(hexData);
     Serial.println("Reply: OK\n");
   }
 }
 
-void callback(char *topic, byte *message, unsigned int length)
+int postData(String data)
 {
-  Serial.print("Message arrived on topic: ");
-  Serial.print(topic);
-  Serial.print(". Message: ");
-  String messageTemp;
+  String requestBody = "[{\"data\":\"" + data + "\"}]";
+  Serial.println(requestBody);
+  int httpResponseCode = http.POST(requestBody);
 
-  for (int i = 0; i < length; i++)
+  if (httpResponseCode > 0)
   {
-    Serial.print((char)message[i]);
-    messageTemp += (char)message[i];
-  }
-  Serial.println(messageTemp);
+    String response = http.getString();
 
-  if (String(topic) == "tracking/actual_position")
-  {
+    Serial.println(httpResponseCode);
+    Serial.println(response);
   }
+
+  return httpResponseCode;
 }
-
-void initMQTT(String token)
-{
-  // MQTT Broker
-  const char *mqttBroker = "134.122.92.235";
-  // const char *mqttBroker = "whiskershub.alpha.aphcarios.com";
-  const char *mqttClientId = "esp32Sim";
-  const int mqttPort = 1883;
-  const char *user = "BrNjFhYr9g7kbTrw43g7";
-  const char *password = "";
-
-  mqttClient.setServer(mqttBroker, mqttPort);
-  mqttClient.setCallback(callback);
-
-  while (!mqttClient.connected())
-  {
-    Serial.printf("The client %s connects to the public mqtt broker\n", mqttClientId);
-    if (mqttClient.connect(mqttClientId, token.c_str(), password))
-    {
-      Serial.println("Public emqx mqtt broker connected");
-      mqttClient.subscribe("tracking/actual_position");
-    }
-    else
-    {
-      Serial.print("failed with state ");
-      Serial.print(mqttClient.state());
-      delay(2000);
-    }
-  }
-}
-void postData(char data[])
-{
-  String device = "";
-  String accessToken = "";
-  int sender = data[0];
-  int trigger = data[1];
-  int temperature = data[2];
-  int battery = data[3];
-
-  Serial.println(sender);
-  Serial.println(trigger);
-
-  Serial.println(temperature);
-  Serial.println(battery);
-
-  if (sender == 33)
-  {
-    device = "S0006";
-    accessToken = "scscscdwrrerer";
-  }
-  else if (sender == 34)
-  {
-    device = "PV0010";
-    accessToken = "BrNjFhYr9g7kbTrw43g7";
-  }
-  else
-    return;
-
-  initMQTT(accessToken);
-  Serial.println("Device " + device);
-  Serial.println("Token " + accessToken);
-
-  // if (data[1] - '0' == 0)
-  //   trigger = false;
-  // else if (data[1] - '0' == 1)
-  //   trigger = true;
-
-  String deviceJson = "{\"device\":" + device + "}";
-  String telemetryJson = "{\"trigger\":" + String(trigger) +
-                         ",\"temprature\":" + String(temperature) +
-                         ",\"battery\":" + String(battery) +
-                         "}";
-
-  Serial.print("JSON: ");
-  Serial.println(telemetryJson);
-
-  bool res = mqttClient.publish("v1/gateway/connect", deviceJson.c_str());
-  Serial.printf("Device connected? %i\n", res);
-
-  res = mqttClient.publish("v1/devices/me/telemetry", telemetryJson.c_str());
-  Serial.printf("Data sent? %i\n", res);
-
-  res = mqttClient.publish("v1/gateway/disconnect", deviceJson.c_str());
-  Serial.printf("Device disconnected? %i\n", res);
-
-  if (mqttClient.connected())
-    mqttClient.disconnect();
-}
-
-// int postData(char data[5])
-// {
-//   String requestBody = "[{\"data\":\"" + data + "\"}]";
-//   Serial.println(data);
-//   int httpResponseCode = http.POST(requestBody);
-
-//   if (httpResponseCode > 0)
-//   {
-//     String response = http.getString();
-
-//     Serial.println(httpResponseCode);
-//     Serial.println(response);
-//   }
-
-//   return httpResponseCode;
-// }
