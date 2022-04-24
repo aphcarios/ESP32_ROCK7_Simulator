@@ -123,6 +123,8 @@ void processGateway(char msg[])
       Serial.println("Received: " + message);
 
       postData(hexData);
+      hexData = "";
+
       Serial2.print(F("\r\n+SBDIX= 0, 0, 0, 0, 0, 0\r\n"));
       Serial.println("Reply: +SBDIX= 0, 0, 0, 0, 0, 0\n");
     }
