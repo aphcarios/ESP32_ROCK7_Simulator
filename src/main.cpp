@@ -20,7 +20,7 @@ int postData(String data);
 bool binarySession = false;
 int dataLength = 0;
 
-String api = "http://192.168.1.129:8080/api/whiskers/Device/7lE8dNiruTufKHhOBHhs";
+String api = "https://whiskershub.aphcarios.com/api/whiskers/Device/t4RYAQIGBz5yD3mzva58";
 String hexData = "";
 
 int startCounter = 0;
@@ -158,7 +158,7 @@ void processGateway(char msg[])
 
 int postData(String data)
 {
-  String requestBody = "[{\"data\":\"" + data + "\"}]";
+  String requestBody = "{\"data\":\"" + data + "\"}";
   Serial.println(requestBody);
   int httpResponseCode = http.POST(requestBody);
 
